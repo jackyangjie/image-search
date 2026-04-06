@@ -1,2 +1,4 @@
+assets/models/mobileclip_s0_text.onnx filter=lfs diff=lfs merge=lfs -text
+assets/models/mobileclip_s0_image.onnx filter=lfs diff=lfs merge=lfs -text
 assets/models/**/*.onnx filter=lfs diff=lfs merge=lfs -text
 assets/models/**/*.model filter=lfs diff=lfs merge=lfs -text

@@ -41,6 +41,7 @@ yarn-error.*
 /android
 
 # Large model files (download separately)
-assets/models/*.onnx
+# NOTE: mobileclip_s0_*.onnx are tracked via Git LFS for APK builds
+# assets/models/*.onnx
 assets/models/*.onnx.data
 assets/models/*.pt
