@@ -1,8 +1,0 @@
-[     564ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:8088/index.ts.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:18567
-[     694ms] [LOG] Running application "main" with appParams:
- {rootTag: #root, hydrate: undefined} 
-Development-level warnings: ON.
-Performance optimizations: OFF. @ http://localhost:8088/index.ts.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:4286
-[    7208ms] [LOG] Database initialized @ http://localhost:8088/index.ts.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:69414
-[    7208ms] [LOG] AI Service initialized (mock) @ http://localhost:8088/index.ts.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:74332
-[    7216ms] [INFO] [INFO] App initialization completed @ http://localhost:8088/index.ts.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:75746
