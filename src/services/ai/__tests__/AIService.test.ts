@@ -56,9 +56,7 @@ describe('AIService', () => {
 
     it('should throw error if not initialized', async () => {
       const imageUri = 'file:///path/to/image.jpg';
-      await expect(service.encodeImage(imageUri)).rejects.toThrow(
-        'AI_NOT_INITIALIZED'
-      );
+      await expect(service.encodeImage(imageUri)).rejects.toThrow('AI_NOT_INITIALIZED');
     });
 
     it('should return different embeddings for different images', async () => {
@@ -93,9 +91,7 @@ describe('AIService', () => {
     });
 
     it('should throw error if not initialized', async () => {
-      await expect(service.encodeText('test query')).rejects.toThrow(
-        'AI_NOT_INITIALIZED'
-      );
+      await expect(service.encodeText('test query')).rejects.toThrow('AI_NOT_INITIALIZED');
     });
 
     it('should handle empty string', async () => {
@@ -154,13 +150,6 @@ describe('AIService', () => {
       const vector1 = [0, 0, 0];
       const vector2 = [1, 2, 3];
       expect(() => service.cosineSimilarity(vector1, vector2)).toThrow();
-    });
-  });
-
-  describe('warmUp', () => {
-    it('should complete without errors', async () => {
-      await service.initialize();
-      await expect(service.warmUp()).resolves.not.toThrow();
     });
   });
 

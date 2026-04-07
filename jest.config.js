@@ -2,7 +2,7 @@ module.exports = {
   preset: 'react-native',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|expo|expo-sqlite|expo-media-library|@unimodules)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|expo|expo-sqlite|expo-media-library|expo-file-system|expo-image-manipulator|expo-image-picker|fast-png|@unimodules)/)',
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleNameMapper: {
@@ -13,11 +13,7 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.test.tsx',
     '<rootDir>/tests/**/*.test.ts',
   ],
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/__tests__/**',
-  ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/__tests__/**'],
   coverageThreshold: {
     global: {
       branches: 70,

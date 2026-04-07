@@ -1,0 +1,28 @@
+{
+    "cli":
+    {
+        "version": ">= 15.0.0"
+    },
+    "build":
+    {
+        "development":
+        {
+            "distribution": "internal",
+            "android":
+            {
+                "gradleCommand": ":app:assembleDebug"
+            }
+        },
+        "preview":
+        {
+            "distribution": "internal",
+            "android":
+            {
+                "buildType": "apk"
+            }
+        },
+        "production":
+        {}
+    }
+    
+}
