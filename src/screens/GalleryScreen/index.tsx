@@ -12,7 +12,7 @@ import { colors } from '@/constants';
 
 export function GalleryScreen(): React.ReactElement {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { photos, scanPhotos, scanAllPhotos, isScanning, scanProgress, refreshGallery } =
+  const { photos, scanPhotos, scanAllPhotos, isScanning, scanProgress, scanTotal, scanIndexed, scanCurrentFile, refreshGallery, aiModelType, aiModelStatus, isInitialized } =
     useAppContext();
 
   const handlePhotoPress = useCallback(
@@ -28,11 +28,47 @@ export function GalleryScreen(): React.ReactElement {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>我的相册</Text>
-        <Text style={styles.stats}>{photos.length} 张照片</Text>
+        <Text style={styles.stats}>{photos.length} 张照片 (已索引: {photos.filter(p => p.isIndexed).length})</Text>
       </View>
 
-      {photos.length === 0 && !isScanning && (
-        <EmptyState title="还没有照片" description="点击下方按钮开始扫描相册" />
+      {/* AI模型状态显示 */}
+      {isInitialized && (
+        <View style={styles.modelStatusContainer}>
+          <View style={[
+            styles.modelStatusBadge,
+            aiModelStatus === 'loaded' ? styles.statusLoaded :
+            aiModelStatus === 'mock' ? styles.statusMock : styles.statusUnknown
+          ]}>
+            <Text style={styles.modelStatusText}>
+              AI模型: {aiModelType === 'chinese-clip' ? 'Chinese-CLIP' : 
+                      aiModelType === 'siglip2' ? 'SigLIP2' : 
+                      aiModelType === 'mock' ? '模拟模式' : aiModelType}
+            </Text>
+            <Text style={styles.modelStatusSubtext}>
+              {aiModelStatus === 'loaded' ? '✓ 真实推理' : 
+               aiModelStatus === 'mock' ? '⚠ 模拟模式' : '...初始化中'}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {isScanning && (
+        <View style={styles.progressContainer}>
+          <View style={styles.progressInfo}>
+            <Text style={styles.progressText}>
+              扫描中... {scanIndexed}/{scanTotal} 张
+            </Text>
+            <Text style={styles.progressPercent}>{Math.round(scanProgress)}%</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${scanProgress}%` }]} />
+          </View>
+          {scanCurrentFile ? (
+            <Text style={styles.currentFile} numberOfLines={1} ellipsizeMode="middle">
+              正在处理: {scanCurrentFile.split('/').pop()}
+            </Text>
+          ) : null}
+        </View>
       )}
 
       {photos.length > 0 && (
@@ -109,5 +145,82 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  progressContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 14,
+    color: colors.gray700,
+    fontWeight: '500',
+  },
+  progressPercent: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: colors.gray200,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 3,
+  },
+  currentFile: {
+    fontSize: 12,
+    color: colors.gray500,
+  },
+  modelStatusContainer: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  modelStatusBadge: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  statusLoaded: {
+    backgroundColor: '#dcfce7',
+    borderColor: '#22c55e',
+  },
+  statusMock: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#f59e0b',
+  },
+  statusUnknown: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#9ca3af',
+  },
+  modelStatusText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  modelStatusSubtext: {
+    fontSize: 12,
+    color: '#6b7280',
   },
 });

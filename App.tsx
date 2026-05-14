@@ -3,7 +3,7 @@
  * @description 包含初始化流程、权限检查和错误边界处理
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -54,6 +54,7 @@ function AppInitializer(): React.ReactElement {
   const [hasPermission, setHasPermission] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
+  const initCompletedRef = useRef(false);
 
   // 检查权限
   const checkPermission = useCallback(async () => {
@@ -86,6 +87,7 @@ function AppInitializer(): React.ReactElement {
         logger.error('App initialization failed:', error);
         setInitError('初始化失败，请重启应用');
       } finally {
+        initCompletedRef.current = true;
         setIsInitializing(false);
       }
     };
@@ -93,10 +95,34 @@ function AppInitializer(): React.ReactElement {
     init();
   }, [initAppState, checkPermission]);
 
+  // 30秒超时保护：防止 AI 模型加载挂起导致永久卡在 loading
+  useEffect(() => {
+    const TIMEOUT_MS = 30000;
+    const timer = setTimeout(() => {
+      if (!initCompletedRef.current) {
+        logger.warn('App initialization timed out after 30s');
+        setInitError('初始化超时，请重启应用');
+        setIsInitializing(false);
+      }
+    }, TIMEOUT_MS);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // 权限授予回调
   const handlePermissionGranted = useCallback(async () => {
     await checkPermission();
   }, [checkPermission]);
+
+  // 显示错误状态（优先于加载状态，防止超时后被 loading 条件永久拦截）
+  if (initError) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>初始化失败</Text>
+        <Text style={styles.errorMessage}>{initError}</Text>
+      </View>
+    );
+  }
 
   // 显示加载状态
   if (isInitializing || !isAppStateInitialized) {
@@ -104,17 +130,6 @@ function AppInitializer(): React.ReactElement {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.loadingText}>正在初始化...</Text>
-        {initError && <Text style={styles.errorText}>{initError}</Text>}
-      </View>
-    );
-  }
-
-  // 显示错误状态
-  if (initError) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>初始化失败</Text>
-        <Text style={styles.errorMessage}>{initError}</Text>
       </View>
     );
   }
