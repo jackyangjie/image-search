@@ -15,16 +15,14 @@ const mockDb = {
   closeAsync: mockCloseAsync,
 };
 
-const mockOpenDatabaseAsync = SQLite.openDatabaseAsync as jest.MockedFunction<
-  typeof SQLite.openDatabaseAsync
->;
+const mockOpenDatabase = jest.fn();
 
 describe('DBService', () => {
   let service: DBService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockOpenDatabaseAsync.mockResolvedValue(mockDb as any);
+    mockOpenDatabase.mockReturnValue(mockDb as any);
     service = DBService.getInstance();
   });
 
@@ -45,12 +43,12 @@ describe('DBService', () => {
     it('should open database and execute schema', async () => {
       await service.initialize();
 
-      expect(mockOpenDatabaseAsync).toHaveBeenCalledWith('smartphoto.db');
+      expect(mockOpenDatabase).toHaveBeenCalledWith('smartphoto.db');
       expect(mockExecAsync).toHaveBeenCalled();
     });
 
     it('should throw error if initialization fails', async () => {
-      mockOpenDatabaseAsync.mockRejectedValue(new Error('DB Error'));
+      mockOpenDatabase.mockRejectedValue(new Error('DB Error'));
 
       await expect(service.initialize()).rejects.toThrow('DB_INIT_FAILED');
     });
