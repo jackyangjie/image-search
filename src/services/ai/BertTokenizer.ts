@@ -1,4 +1,4 @@
-import { File, Paths } from 'expo-file-system';
+import { readAsStringAsync, getInfoAsync, documentDirectory, bundleDirectory } from 'expo-file-system';
 
 export class BertTokenizer {
   private vocab: Map<string, number> = new Map();
@@ -15,8 +15,7 @@ export class BertTokenizer {
 
   async loadFromFile(vocabPath: string): Promise<void> {
     try {
-      const vocabFile = new File(vocabPath);
-      const vocabText = await vocabFile.text();
+      const vocabText = await readAsStringAsync(vocabPath);
       this.loadVocabFromText(vocabText);
       this.loaded = true;
       console.log(`BERT Tokenizer loaded: ${this.vocab.size} tokens`);
@@ -178,9 +177,10 @@ export async function getBertTokenizer(): Promise<BertTokenizer> {
   tokenizerInstance = new BertTokenizer(52);
 
   const paths = [
-    'file:///android_asset/chinese-clip/vocab.txt',
-    `${Paths.document.uri}chinese-clip/vocab.txt`,
-    `${Paths.bundle.uri}chinese-clip/vocab.txt`,
+    // ONNX Runtime 使用 asset:/ 协议
+    'asset:/models/chinese-clip-base/vocab.txt',
+    `${documentDirectory}models/chinese-clip-base/vocab.txt`,
+    `${bundleDirectory}models/chinese-clip-base/vocab.txt`,
   ];
 
   loadingPromise = loadTokenizerFile(tokenizerInstance, paths);
@@ -192,8 +192,8 @@ export async function getBertTokenizer(): Promise<BertTokenizer> {
 async function loadTokenizerFile(tokenizer: BertTokenizer, paths: string[]): Promise<void> {
   for (const vocabPath of paths) {
     try {
-      const vocabFile = new File(vocabPath);
-      if (vocabFile.exists) {
+      const fileInfo = await getInfoAsync(vocabPath);
+      if (fileInfo.exists) {
         await tokenizer.loadFromFile(vocabPath);
         return;
       }

@@ -12,6 +12,24 @@ import * as ImageManipulator from 'expo-image-manipulator';
 const CLIP_MEAN = [0.48145466, 0.4578275, 0.40821073];
 const CLIP_STD = [0.26862954, 0.26130258, 0.27577711];
 
+// Hermes 引擎没有 atob，提供 polyfill
+if (typeof atob === 'undefined') {
+  (globalThis as any).atob = function atobPolyfill(b64: string): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let str = '';
+    for (let i = 0; i < b64.length; i += 4) {
+      const a = chars.indexOf(b64[i] || '=');
+      const b = chars.indexOf(b64[i + 1] || '=');
+      const c = chars.indexOf(b64[i + 2] || '=');
+      const d = chars.indexOf(b64[i + 3] || '=');
+      str += String.fromCharCode((a << 2) | (b >> 4));
+      if (c !== 64) str += String.fromCharCode(((b & 15) << 4) | (c >> 2));
+      if (d !== 64) str += String.fromCharCode(((c & 3) << 6) | d);
+    }
+    return str;
+  };
+}
+
 export interface PreprocessedImage {
   data: Float32Array;
   width: number;
@@ -22,10 +40,10 @@ export interface PreprocessedImage {
  * 将图片 URI 转换为模型输入的 CHW Float32Array
  * 使用 expo-image-manipulator 缩放到 224x224，输出 PNG base64，然后解码像素数据
  */
-export async function preprocessImage(imageUri: string): Promise<PreprocessedImage> {
+export async function preprocessImage(imageUri: string, imageSize: number = 224): Promise<PreprocessedImage> {
   const manipulated = await ImageManipulator.manipulateAsync(
     imageUri,
-    [{ resize: { width: 224, height: 224 } }],
+    [{ resize: { width: imageSize, height: imageSize } }],
     { format: ImageManipulator.SaveFormat.PNG, base64: true }
   );
 
@@ -34,12 +52,12 @@ export async function preprocessImage(imageUri: string): Promise<PreprocessedIma
   }
 
   const pixelData = decodeBase64Png(manipulated.base64);
-  const normalized = normalizeToCHW(pixelData);
+  const normalized = normalizeToCHW(pixelData, imageSize);
 
   return {
     data: normalized,
-    width: 224,
-    height: 224,
+    width: imageSize,
+    height: imageSize,
   };
 }
 
@@ -240,14 +258,14 @@ function paethPredictor(left: number, up: number, leftUp: number): number {
 /**
  * 将 RGBA 像素数据转换为 CHW 格式（Channel-Height-Width）并做 CLIP 归一化
  */
-function normalizeToCHW(rgbaData: Uint8ClampedArray): Float32Array {
-  const size = 224 * 224;
+function normalizeToCHW(rgbaData: Uint8ClampedArray, imageSize: number = 224): Float32Array {
+  const size = imageSize * imageSize;
   const chw = new Float32Array(3 * size);
 
-  for (let y = 0; y < 224; y++) {
-    for (let x = 0; x < 224; x++) {
-      const pixelIndex = (y * 224 + x) * 4;
-      const channelIndex = y * 224 + x;
+  for (let y = 0; y < imageSize; y++) {
+    for (let x = 0; x < imageSize; x++) {
+      const pixelIndex = (y * imageSize + x) * 4;
+      const channelIndex = y * imageSize + x;
 
       const r = rgbaData[pixelIndex] / 255.0;
       chw[channelIndex] = (r - CLIP_MEAN[0]) / CLIP_STD[0];

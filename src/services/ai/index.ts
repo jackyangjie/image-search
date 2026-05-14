@@ -1,4 +1,4 @@
 export { AIService, ModelType } from './AIService';
-export { AIServiceMock } from './AIService.mock';
 export { BertTokenizer, getBertTokenizer, resetBertTokenizer } from './BertTokenizer';
+export { SiglipTokenizer, getSiglipTokenizer, resetSiglipTokenizer } from './SiglipTokenizer';
 export { preprocessImage, normalizeEmbedding } from './ImagePreprocessor';
