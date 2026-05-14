@@ -1,5 +1,11 @@
 {
   "expo": {
-    "plugins": ["onnxruntime-react-native"]
+    "name": "SmartPhoto Search",
+    "slug": "smartphoto-search",
+    "version": "1.0.0",
+    "android": {
+      "package": "com.yourcompany.smartphoto"
+    },
+    "plugins": []
   }
 }

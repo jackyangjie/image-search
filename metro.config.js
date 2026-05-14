@@ -10,6 +10,9 @@ module.exports = async () => {
       ...defaultConfig.resolver,
       assetExts: [...defaultConfig.resolver.assetExts, 'onnx', 'tflite', 'wasm'],
       sourceExts: defaultConfig.resolver.sourceExts.filter(ext => ext !== 'wasm'),
+      extraNodeModules: {
+        '@': path.resolve(__dirname, 'src'),
+      },
     },
     server: {
       ...defaultConfig.server,
@@ -22,5 +25,6 @@ module.exports = async () => {
         };
       },
     },
+    watchFolders: [path.resolve(__dirname)],
   };
 };

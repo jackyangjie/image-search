@@ -7,7 +7,6 @@ node_modules/
 .expo/
 dist/
 web-build/
-expo-env.d.ts
 
 # Native
 .kotlin/
@@ -45,3 +44,23 @@ yarn-error.*
 # assets/models/*.onnx
 assets/models/*.onnx.data
 assets/models/*.pt
+
+# Agent working directories
+.opencode/
+.sisyphus/
+openspec/
+
+# Screenshots and test images
+*.png
+*.jpg
+*.jpeg
+!assets/**/*.png
+!assets/**/*.jpg
+
+# Generated / temp
+logs/
+venv/
+output/
+
+# Expo generated
+expo-env.d.ts
