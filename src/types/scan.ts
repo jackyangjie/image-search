@@ -9,6 +9,8 @@ export interface ScanOptions {
   thumbnailSize?: number;
   batchSize?: number;
   concurrency?: number;
+  /** 限制处理的照片数量（用于调试） */
+  limit?: number;
 }
 
 export interface ScanState {

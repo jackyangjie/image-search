@@ -1,9 +1,8 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { SearchOptions, SearchResult, SearchHistoryItem } from '@/types';
 import { DBService } from '@/services/db';
-import { AIService, AIServiceMock } from '@/services/ai';
+import { AIService } from '@/services/ai';
 import { EventBus } from '@/services/event/EventBus';
-import { isExpoGo } from '@/utils/environment';
 
 const SEARCH_HISTORY_KEY = '@smartphoto_search_history';
 
@@ -65,7 +64,7 @@ const AsyncStorage = new FileStorage();
 export class SearchService {
   private static _instance: SearchService | null = null;
   private _dbService: DBService;
-  private _aiService: AIService | AIServiceMock;
+  private _aiService: AIService;
 
   static getInstance(): SearchService {
     if (!SearchService._instance) {
@@ -76,19 +75,21 @@ export class SearchService {
 
   constructor() {
     this._dbService = DBService.getInstance();
-    this._aiService = isExpoGo() ? AIServiceMock.getInstance() : AIService.getInstance();
+    this._aiService = AIService.getInstance();
   }
 
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
-    const { limit = 20, threshold = 0.5, timeRange, sortBy = 'similarity' } = options;
+    const { limit = 20, threshold = 0.2, timeRange, sortBy = 'similarity' } = options;
 
     EventBus.emit('search:start', { query });
     const startTime = Date.now();
 
     try {
       const textEmbedding = await this._aiService.encodeText(query);
+      console.log(`[Search] encodeText completed, dim=${textEmbedding.length}, first5=${textEmbedding.slice(0,5).join(',')}`);
 
       let results = await this._dbService.searchByVector(textEmbedding, limit * 2, threshold);
+      console.log(`[Search] searchByVector returned ${results.length} results`);
 
       if (timeRange) {
         const { start, end } = timeRange;

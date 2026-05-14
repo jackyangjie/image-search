@@ -3,7 +3,7 @@
  * Manages photo metadata and vector storage
  */
 
-import * as SQLite from 'expo-sqlite';
+import * as SQLite from 'expo-sqlite/next';
 import { Photo, PhotoQueryOptions, SearchResult, DBStats } from '@/types';
 import { CREATE_TABLES } from './schema';
 
@@ -21,7 +21,24 @@ export class DBService {
   async initialize(): Promise<void> {
     try {
       this._db = await SQLite.openDatabaseAsync('smartphoto.db');
-      await this._db.execAsync(CREATE_TABLES);
+      // 新版API: execAsync接受SQL字符串
+      await this._db.execAsync(`
+        CREATE TABLE IF NOT EXISTS photos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          uuid TEXT UNIQUE NOT NULL,
+          filePath TEXT NOT NULL,
+          thumbnailPath TEXT,
+          createdAt DATETIME NOT NULL,
+          modifiedAt DATETIME NOT NULL,
+          width INTEGER,
+          height INTEGER,
+          embedding TEXT,
+          isIndexed BOOLEAN DEFAULT 0,
+          fileSize INTEGER
+        );
+        CREATE INDEX IF NOT EXISTS idx_photos_isIndexed ON photos(isIndexed);
+        CREATE INDEX IF NOT EXISTS idx_photos_createdAt ON photos(createdAt);
+      `);
       console.log('Database initialized');
     } catch (error) {
       console.error('Failed to initialize database:', error);
@@ -58,12 +75,36 @@ export class DBService {
   }
 
   async insertPhotos(photos: Photo[]): Promise<number[]> {
-    const ids: number[] = [];
-    for (const photo of photos) {
-      const id = await this.insertPhoto(photo);
-      ids.push(id);
+    if (!this._db) throw new Error('DB_NOT_INITIALIZED');
+    if (photos.length === 0) return [];
+
+    await this._db.execAsync('BEGIN TRANSACTION');
+    try {
+      const ids: number[] = [];
+      for (const photo of photos) {
+        const result = await this._db.runAsync(
+          `INSERT INTO photos (uuid, filePath, thumbnailPath, createdAt, modifiedAt, width, height, embedding, isIndexed, fileSize) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            photo.uuid,
+            photo.filePath,
+            photo.thumbnailPath || null,
+            photo.createdAt.toISOString(),
+            photo.modifiedAt.toISOString(),
+            photo.width || null,
+            photo.height || null,
+            photo.embedding ? JSON.stringify(photo.embedding) : null,
+            photo.isIndexed ? 1 : 0,
+            photo.fileSize || null,
+          ]
+        );
+        ids.push(result.lastInsertRowId);
+      }
+      await this._db.execAsync('COMMIT');
+      return ids;
+    } catch (error) {
+      await this._db.execAsync('ROLLBACK');
+      throw error;
     }
-    return ids;
   }
 
   async getPhoto(id: number): Promise<Photo | null> {
@@ -168,22 +209,36 @@ export class DBService {
   async searchByVector(
     query: number[],
     topK: number,
-    threshold: number = 0.5
+    threshold: number = 0.2
   ): Promise<SearchResult[]> {
     if (!this._db) throw new Error('DB_NOT_INITIALIZED');
 
+    const allRows = await this._db.getAllAsync<any>('SELECT COUNT(*) as total, SUM(CASE WHEN isIndexed = 1 THEN 1 ELSE 0 END) as indexedCount, SUM(CASE WHEN embedding IS NOT NULL THEN 1 ELSE 0 END) as withEmbedding FROM photos');
+    console.log(`[Search] DB stats: total=${allRows[0]?.total}, indexed=${allRows[0]?.indexedCount}, hasEmbedding=${allRows[0]?.withEmbedding}`);
+
     const rows = await this._db.getAllAsync<any>('SELECT * FROM photos WHERE isIndexed = 1');
     const photos = rows.map(row => this._rowToPhoto(row));
+    console.log(`[Search] Loaded ${photos.length} indexed photos from DB`);
 
-    const results: SearchResult[] = photos
+    const mapped = photos
       .filter(p => p.embedding)
       .map(p => ({
         photo: p,
         similarity: this._cosineSimilarity(query, p.embedding!),
-      }))
+      }));
+    console.log(`[Search] ${mapped.length} photos with valid embeddings, threshold=${threshold}`);
+    if (mapped.length > 0) {
+      const sims = mapped.map(r => r.similarity);
+      console.log(`[Search] top similarity: ${Math.max(...sims)}, min: ${Math.min(...sims)}, avg: ${sims.reduce((a,b) => a+b, 0) / sims.length}`);
+      console.log(`[Search] first 5 similarities: ${sims.slice(0,5).map(s => s.toFixed(4)).join(', ')}`);
+    } else {
+      console.log(`[Search] WARNING: No photos with embeddings found! Check if scan completed successfully.`);
+    }
+    const results = mapped
       .filter(r => r.similarity >= threshold)
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, topK);
+    console.log(`[Search] after threshold=${threshold}: ${results.length} results`);
 
     return results;
   }

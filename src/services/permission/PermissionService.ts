@@ -24,7 +24,7 @@ export class PermissionService {
 
   async checkPhotoPermission(): Promise<boolean> {
     try {
-      const { status } = await MediaLibrary.getPermissionsAsync(false, ['photo']);
+      const { status } = await MediaLibrary.getPermissionsAsync();
       return status === MediaLibrary.PermissionStatus.GRANTED;
     } catch (error) {
       console.warn('MediaLibrary permission check failed (Expo Go limitation):', error);
@@ -34,7 +34,7 @@ export class PermissionService {
 
   async requestPhotoPermission(): Promise<boolean> {
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+      const { status } = await MediaLibrary.requestPermissionsAsync();
       return status === MediaLibrary.PermissionStatus.GRANTED;
     } catch (error) {
       console.warn('MediaLibrary permission request failed (Expo Go limitation):', error);
